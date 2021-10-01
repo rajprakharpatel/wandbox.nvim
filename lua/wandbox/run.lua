@@ -1,91 +1,72 @@
 local util = require("wandbox.util")
-
-local http = require("socket.http")
-local ltn12 = require("ltn12")
 local json = require("wandbox.dkjson")
 
-local base_url = "https://wandbox.org/api"
+local loop = vim.loop
 
-local function http_request(args)
-    -- http.request(url [, body])
-    -- http.request{
-    --  url = string,
-    --  [sink = LTN12 sink,]
-    --  [method = string,]
-    --  [headers = header-table,]
-    --  [source = LTN12 source],
-    --  [step = LTN12 pump step,]
-    --  [proxy = string,]
-    --  [redirect = boolean,]
-    --  [create = function]
-    -- }
-    --
-    --
-    local resp, r = {}, {}
-    if args.endpoint then
-        local params = ""
-        if args.method == nil or args.method == "GET" then
-            -- prepare query parameters like http://xyz.com?q=23&a=2
-            if args.params then for i, v in pairs(args.params) do params = params .. i .. "=" .. v .. "&" end end
-        end
-        params = string.sub(params, 1, -2)
-        local url = ""
-        if params then
-            url = base_url .. args.endpoint .. "?" .. params
-        else
-            url = base_url .. args.endpoint
-        end
-        local client, code, headers, status = http.request {
-            url = url,
-            sink = ltn12.sink.table(resp),
-            method = args.method or "GET",
-            headers = args.headers,
-            source = args.source,
-            step = args.step,
-            proxy = args.proxy,
-            redirect = args.redirect,
-            create = args.create
-        }
-        r['code'], r['headers'], r['status'], r['response'] = code, headers, status, resp
-    else
-        error("endpoint is missing")
+local results = {}
+-- callback function of stdout and stderr file decriptors
+local function onread(err, data)
+    if err then
+        print('ERROR: ', err)
+        -- TODO handle err
     end
-    return r
+    if data then
+        local vals = vim.split(data, "\n")
+        for _, d in pairs(vals) do
+            if d == "" then goto continue end
+            table.insert(results, d)
+            ::continue::
+        end
+    end
 end
 
--- curl post request
-local function curl_get(data)
-    local cmd = [[curl -s -H "Content-type: application/json" -d ]] .. "'" .. data .. "'" ..
-                    [[ https://wandbox.org/api/compile.json]]
-    local fh = io.popen(cmd)
-    local out = fh:read("a")
-    fh:close()
-    return out
+-- populate quickfix with output
+local function setQF()
+    -- table.insert(results)
+    vim.fn.setqflist({{text = table.concat(results, '\n')}})
+    -- api.nvim_command('copen')
+    local count = #results
+    for i = 0, count do results[i] = nil end -- clear the table for next search
 end
 
--- wget post request
-local function wget_get(data)
-    local cmd = [[wget -q --header="Content-type: application/json" --post-data=]] .. "'" .. data .. "'" ..
-                    [[ https://wandbox.org/api/compile.json -O -]]
-    local fh = io.popen(cmd)
-    local out = fh:read("a")
-    fh:close()
-    return out
-end
+-- Compile POST request
+local function compile(data, client)
+    local stdout = loop.new_pipe(false)
+    local stderr = loop.new_pipe(false)
 
--- luasocket post request
-local function luasocket_get(data)
-    local endpoint = "/compile.json"
-    -- print(endpoint)
-    local req_body = data
-    local headers = {["Content-Type"] = "application/x-www-form-urlencoded", ["Content-Length"] = #req_body}
-    local res = http_request {
-        endpoint = endpoint,
-        method = "POST",
-        source = ltn12.source.string(req_body),
-        headers = headers
-    }
-    return res
+    if client == "curl" then
+        print("using curl")
+        Handle = loop.spawn('curl', {
+            args = {'-s', '-H', '"Content-type: application/json"', '-d', data, 'https://wandbox.org/api/compile.json'},
+            stdio = {nil, stdout, stderr}
+        }, vim.schedule_wrap(function()
+            stdout:read_stop()
+            stderr:read_stop()
+            stdout:close()
+            stderr:close()
+            Handle:close()
+            setQF()
+        end))
+    elseif client == "wget" then
+        print("using wget")
+        Handle = loop.spawn('wget', {
+            args = {
+                '-q', '--header=', '"Content-type: application/json"', '--post-data', data,
+                'https://wandbox.org/api/compile.json', '-O-'
+            },
+            stdio = {nil, stdout, stderr}
+        }, vim.schedule_wrap(function()
+            stdout:read_stop()
+            stderr:read_stop()
+            stdout:close()
+            stderr:close()
+            Handle:close()
+            setQF()
+        end))
+    end
+
+    loop.read_start(stdout, onread)
+    loop.read_start(stderr, onread)
 end
 
 -- main runner
@@ -93,12 +74,8 @@ local function run(client_list)
     local client = util.get_client(client_list)
     local buf_data = util.format_data()
     local data = json.encode(buf_data)
-    local res = ''
-    if client == 'curl' then res = curl_get(data) end
-    if client == 'wget' then res = wget_get(data) end
-    if client == 'socket' then res = luasocket_get(data) end
-    vim.cmd('copen')
-    vim.fn.setqflist({{text = res}})
+
+    compile(data, client)
 end
 
 return {run = run}
