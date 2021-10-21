@@ -2,12 +2,13 @@ local util = require("wandbox.util")
 local json = require("wandbox.dkjson")
 
 local loop = vim.loop
+local notify = util.notify
 
 local results = {}
 -- callback function of stdout and stderr file decriptors
 local function onread(err, data)
     if err then
-        print('ERROR: ', err)
+        notify('ERROR: ' .. err, vim.log.levels.ERROR, {title = 'wandbox.nvim'})
         -- TODO handle err
     end
     if data then
@@ -20,13 +21,40 @@ local function onread(err, data)
     end
 end
 
+-- Format data for display in QF
+local function qfFormat(s, delimiter, title)
+    local result = {};
+    if title ~= nil then table.insert(result, {text = title, type = 'E'}) end
+    for match in (s .. delimiter):gmatch("(.-)" .. delimiter) do table.insert(result, {text = match}); end
+    return result;
+end
+
 -- populate quickfix with output
 local function setQF()
-    -- table.insert(results)
-    vim.fn.setqflist({{text = table.concat(results, '\n')}})
-    -- api.nvim_command('copen')
+    local results_json = json.decode(table.concat(results, '\n'))
+    if results_json == nil then
+        notify("Error in request", vim.log.levels.WARN, {title = 'wandbox.nvim'})
+        vim.fn.setqflist({{text = table.concat(results)}})
+        return
+    end
+
+    if results_json.status == '0' then
+        notify("compiled successfully", vim.log.levels.INFO, {title = 'wandbox.nvim'})
+        local qfData = qfFormat(results_json.program_output, '\n');
+        vim.fn.setqflist(qfData)
+    elseif results_json.status == '1' then
+        notify("Error in Program", vim.log.levels.ERROR, {title = 'wandbox.nvim'})
+        local qfData = {{}}
+        if results_json.compiler_message ~= nil then
+            qfData = qfFormat(results_json.compiler_message, '\n', 'Compiler Message:')
+        elseif results_json.program_error ~= nil then
+            qfData = qfFormat(results_json.program_error, '\n', 'Program Error:')
+        end
+        vim.fn.setqflist(qfData)
+    end
+    -- vim.api.nvim_command('copen')
     local count = #results
-    for i = 0, count do results[i] = nil end -- clear the table for next search
+    for i = 0, count do results[i] = nil end -- clear the table for next output
 end
 
 -- Compile POST request
@@ -35,7 +63,7 @@ local function compile(data, client)
     local stderr = loop.new_pipe(false)
 
     if client == "curl" then
-        print("using curl")
+        -- print("using curl")
         Handle = loop.spawn('curl', {
             args = {'-s', '-H', '"Content-type: application/json"', '-d', data, 'https://wandbox.org/api/compile.json'},
             stdio = {nil, stdout, stderr}
@@ -48,7 +76,7 @@ local function compile(data, client)
             setQF()
         end))
     elseif client == "wget" then
-        print("using wget")
+        -- print("using wget")
         Handle = loop.spawn('wget', {
             args = {
                 '-q', '--header=', '"Content-type: application/json"', '--post-data', data,
@@ -70,9 +98,13 @@ local function compile(data, client)
 end
 
 -- main runner
-local function run(client_list)
-    local client = util.get_client(client_list)
-    local buf_data = util.format_data()
+local function run(options)
+    local client = options.client_list[1]
+    local buf_data = util.format_data(options)
+    if buf_data.compiler == nil then
+        notify("Filetype not supported", vim.log.levels.INFO, {title = 'wandbox.nvim'})
+        return
+    end
     local data = json.encode(buf_data)
 
     compile(data, client)

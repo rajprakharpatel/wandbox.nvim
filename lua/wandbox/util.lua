@@ -1,7 +1,7 @@
 local util = {}
 
 -- unload module
-util.unrequire = function(module)
+local unrequire = function(module)
     package.loaded[module] = nil
 end
 
@@ -9,29 +9,35 @@ end
 util.is_available = function(client)
     local function requireif(module)
         require(module)
-        util.unrequire(module)
+        unrequire(module)
     end
     if vim.fn.executable(client) == 1 or pcall(requireif, client) then return client end
     return nil
 end
 
--- returns the first available client in list
-util.get_client = function(optins)
-    for _, client in ipairs(optins.client_list) do if client ~= nil then return client end end
-end
-
--- select compiler for a language
-util.get_compiler = function(ft)
-    if ft == 'python' then return 'cpython-head' end
-end
-
 -- get buffer data and format it to json
-util.format_data = function()
+util.format_data = function(options)
     local ft = vim.api.nvim_buf_get_option(0, 'filetype')
-    local compiler = util.get_compiler(ft)
     local buff = vim.api.nvim_buf_get_lines(0, 0, -1, false)
     local code = table.concat(buff, "\n")
-    return {compiler = compiler, code = code}
+    return {
+        compiler = options.compilers[ft],
+        code = code,
+        options = options.options[ft],
+        stdin = options.stdin[ft],
+        ['compiler-option-raw'] = options.compiler_option_raw[ft],
+        ['runtime-option-raw'] = options.runtime_option_raw[ft],
+		save = options.save[ft]
+    }
+end
 
+-- set notify to 'rcarriga/nivm-notify' if available
+util.notify = function(...)
+    if util.is_available('notify') then
+        require("notify").setup({timeout = 50, background_colour = "#000000"})
+        require("notify")(...)
+    else
+        vim.notify(...)
+    end
 end
 return util
