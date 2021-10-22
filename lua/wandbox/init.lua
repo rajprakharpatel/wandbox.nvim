@@ -7,7 +7,7 @@ end
 
 local function run(options)
     -- 	require('wandbox.run').run(config.options)
-    if options == nil then
+    if options == nil or type(options) ~= "table" then
         options = config.options
     end
 

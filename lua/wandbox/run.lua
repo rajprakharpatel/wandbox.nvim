@@ -35,10 +35,7 @@ local function setQF()
     if results_json == nil then
         notify("Error in request", vim.log.levels.WARN, {title = 'wandbox.nvim'})
         vim.fn.setqflist({{text = table.concat(results)}})
-        return
-    end
-
-    if results_json.status == '0' then
+    elseif results_json.status == '0' then
         notify("compiled successfully", vim.log.levels.INFO, {title = 'wandbox.nvim'})
         local qfData = qfFormat(results_json.program_output, '\n');
         vim.fn.setqflist(qfData)
@@ -47,18 +44,17 @@ local function setQF()
         local qfData = {{}}
         if results_json.compiler_message ~= nil then
             qfData = qfFormat(results_json.compiler_message, '\n', 'Compiler Message:')
-        elseif results_json.program_error ~= nil then
-            qfData = qfFormat(results_json.program_error, '\n', 'Program Error:')
+        elseif results_json.program_message ~= nil then
+            qfData = qfFormat(results_json.program_message, '\n', 'Program Message:')
         end
         vim.fn.setqflist(qfData)
     end
-    -- vim.api.nvim_command('copen')
     local count = #results
     for i = 0, count do results[i] = nil end -- clear the table for next output
 end
 
 -- Compile POST request
-local function compile(data, client)
+local function compile(data, client, open_qf)
     local stdout = loop.new_pipe(false)
     local stderr = loop.new_pipe(false)
 
@@ -74,6 +70,7 @@ local function compile(data, client)
             stderr:close()
             Handle:close()
             setQF()
+            if open_qf then vim.api.nvim_command('copen') end
         end))
     elseif client == "wget" then
         -- print("using wget")
@@ -102,12 +99,12 @@ local function run(options)
     local client = options.client_list[1]
     local buf_data = util.format_data(options)
     if buf_data.compiler == nil then
-        notify("Filetype not supported", vim.log.levels.INFO, {title = 'wandbox.nvim'})
+        notify("Filetype not supported", vim.log.levels.WARN, {title = 'wandbox.nvim'})
         return
     end
     local data = json.encode(buf_data)
 
-    compile(data, client)
+    compile(data, client, options.open_qf)
 end
 
 return {run = run}

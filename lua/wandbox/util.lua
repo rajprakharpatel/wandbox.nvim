@@ -40,4 +40,13 @@ util.notify = function(...)
         vim.notify(...)
     end
 end
+
+-- TODO: Completiion Items for ex commands
+util.complete_wandboxrun = function (ArgLead, CmdLine, CursorPos)
+	if ArgLead == nil or ArgLead == "" then
+		return {'What'}
+	end
+	return {'some', 'completion', 'items', CmdLine .. CursorPos}
+end
+
 return util
