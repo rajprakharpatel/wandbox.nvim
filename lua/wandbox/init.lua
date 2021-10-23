@@ -10,9 +10,7 @@ local function run(options)
     if options == nil or type(options) ~= "table" then
         options = config.options
 	else
-		put(options)
 		options = vim.tbl_deep_extend("force", config.options, options)
-		put(options)
     end
 
     require('wandbox.run').run(options)
