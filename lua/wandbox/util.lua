@@ -43,10 +43,14 @@ end
 
 -- TODO: Completiion Items for ex commands
 util.complete_wandboxrun = function (ArgLead, CmdLine, CursorPos)
-	if ArgLead == nil or ArgLead == "" then
-		return {'What'}
+	local completion = {}
+	local opts = vim.fn.keys(require("wandbox.config").options)
+	if ArgLead == "-" then
+		for _, v in ipairs(opts) do
+			table.insert(completion, v)
+		end
 	end
-	return {'some', 'completion', 'items', CmdLine .. CursorPos}
+	return completion
 end
 
 return util
