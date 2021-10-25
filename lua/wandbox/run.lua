@@ -33,9 +33,7 @@ end
 
 -- populate quickfix with output
 local function setQF()
-	if results[1] == 'SSL_INIT' then
-		results = {unpack(results, 2)}
-	end
+    if results[1] == 'SSL_INIT' then results = {unpack(results, 2)} end
 
     local ok, results_json = pcall(json.decode, table.concat(results, '\n'))
     if ok == false then
@@ -45,7 +43,12 @@ local function setQF()
     elseif results_json.status == '0' then
         notify("compiled successfully", vim.log.levels.INFO,
                {title = 'wandbox.nvim'})
-        local qfData = qfFormat(results_json.program_output, '\n');
+		local qfData = {}
+        if results_json.program_message ~= nil then
+            qfData = qfFormat(results_json.program_message, '\n');
+		elseif results_json.program_output ~= nil then
+			qfData = qfFormat(results_json.program_output, '\n');
+        end
         vim.fn.setqflist(qfData)
     elseif results_json.status == '1' then
         notify("Error in Program", vim.log.levels.ERROR,
@@ -91,7 +94,7 @@ local function compile(data, client, open_qf)
         Handle = loop.spawn('wget', {
             args = {
                 '-qO', '-', '--header=', '"Content-type: application/json"',
-                '--post-data', data, 'https://wandbox.org/api/compile.json',
+                '--post-data', data, 'https://wandbox.org/api/compile.json'
             },
             stdio = {nil, stdout, stderr}
         }, vim.schedule_wrap(function()
@@ -112,7 +115,7 @@ end
 -- main runner
 local function run(options)
     local client = options.client_list[1]
-    notify("using " .. client, vim.log.levels.TRACE, {title = 'wandbox.nvim'})
+    -- notify("using " .. client, vim.log.levels.TRACE, {title = 'wandbox.nvim'})
     local buf_data = util.format_data(options)
     if buf_data.compiler == nil then
         notify("Filetype not supported", vim.log.levels.WARN,
@@ -120,7 +123,7 @@ local function run(options)
         return
     end
     local ok, data = pcall(json.encode, buf_data)
-	print(options.open_qf)
+    -- 	print(options.open_qf)
     if ok then
         compile(data, client, options.open_qf)
     else
