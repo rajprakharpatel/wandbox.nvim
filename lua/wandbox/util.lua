@@ -42,11 +42,28 @@ util.notify = function(...)
 end
 
 -- TODO: Completiion Items for ex commands
+---@diagnostic disable-next-line: unused-local
 util.complete_wandboxrun = function (ArgLead, CmdLine, CursorPos)
-	if ArgLead == nil or ArgLead == "" then
-		return {'What'}
+	local completion = {}
+    local ft = vim.api.nvim_buf_get_option(0, 'filetype')
+	local opts = vim.fn.keys(require("wandbox.config").options)
+	if ArgLead == "" then
+		for _, v in ipairs(opts) do
+			table.insert(completion, "-" .. v .. "=")
+		end
 	end
-	return {'some', 'completion', 'items', CmdLine .. CursorPos}
+	if ArgLead == "-compilers=" then
+		local complete_opt = require("wandbox.complete_opt").compiler_list[ft]
+		for _, v in ipairs(complete_opt) do
+			table.insert(completion, "-compilers=" .. v)
+		end
+	elseif ArgLead == "-options" then
+		local complete_opt = require("wandbox.complete_opt").options[ft]
+		for _, v in ipairs(complete_opt) do
+			table.insert(completion, "-options=" .. v)
+		end
+	end
+	return completion
 end
 
 return util
