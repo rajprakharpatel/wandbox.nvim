@@ -536,7 +536,7 @@ local switches = {
 	sh = {},
 	c = { "warnings", "optimization", "verbose" },
 	cs = { "optimization" },
-	cp = {
+	cpp = {
 		"warnings",
 		"optimization",
 		"verbose",
@@ -582,5 +582,5 @@ local switches = {
 
 return {
 	compiler_list = compiler_list,
-	opitons = switches,
+	options = switches,
 }
