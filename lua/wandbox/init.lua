@@ -7,11 +7,23 @@ end
 
 local function run(options)
 	-- 	require('wandbox.run').run(config.options)
-	if options == nil or type(options) ~= "table" then
-		options = config.options
+	if options ~= nil then
+		if type(options) ~= "table" then
+			options = require("wandbox.util").process_args(options)
+			if not options.valid then
+				require("wandbox.util").notify(
+					"Invalid Arguments passed to WandboxRun",
+					vim.log.levels.ERROR,
+					{ title = "Wandbox.nvim" }
+				)
+				return
+			end
+		end
 	else
-		options = vim.tbl_deep_extend("force", config.options, options)
+		options = {}
 	end
+
+	options = vim.tbl_deep_extend("force", config.options, options)
 
 	require("wandbox.run").run(options)
 end

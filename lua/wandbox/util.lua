@@ -26,10 +26,10 @@ util.format_data = function(options)
 		compiler = options.compilers[ft],
 		code = code,
 		options = options.options[ft],
-		stdin = options.stdin[ft],
+		stdin = options.stdin,
 		["compiler-option-raw"] = options.compiler_option_raw[ft],
 		["runtime-option-raw"] = options.runtime_option_raw[ft],
-		save = options.save[ft],
+		save = options.save,
 	}
 end
 
@@ -46,7 +46,6 @@ util.notify = function(...)
 	end
 end
 
--- TODO: Completiion Items for ex commands
 ---@diagnostic disable-next-line: unused-local
 util.complete_wandboxrun = function(ArgLead, CmdLine, CursorPos)
 	local completion = {}
@@ -62,13 +61,56 @@ util.complete_wandboxrun = function(ArgLead, CmdLine, CursorPos)
 		for _, v in ipairs(complete_opt) do
 			table.insert(completion, "-compilers=" .. v)
 		end
-	elseif ArgLead == "-options" then
+	elseif ArgLead == "-options=" then
 		local complete_opt = require("wandbox.complete_opt").options[ft]
 		for _, v in ipairs(complete_opt) do
 			table.insert(completion, "-options=" .. v)
 		end
 	end
 	return completion
+end
+
+-- return the value of option 'opt' in 'args'
+local function get_option(args, opt)
+	-- 	local val = {}
+	local _, first = string.find(args, opt)
+	opt = opt .. [[[%w\]*,?[%w\]*]]
+	local _, last = string.find(args, opt)
+	if not first or not last then
+		return nil
+	end
+	return string.sub(args, first + 1, last)
+end
+
+-- process the arguments passed to ex-cmd :WandboxRun
+util.process_args = function(args)
+	local ft = vim.api.nvim_buf_get_option(0, "filetype")
+
+	local options = {
+		client_list = {},
+		compilers = {},
+		options = {},
+		compiler_option_raw = {},
+		runtime_option_raw = {},
+		valid = true,
+	}
+
+	-- TODO: maybe similar logic for rest of the options too
+	local clients = get_option(args, "-client_list")
+	if clients then
+		options.client_list = { get_option(args, "-client_list=") }
+	else
+		options.client_list = nil
+	end
+	options.compilers[ft] = get_option(args, "-compilers=")
+	options.options[ft] = get_option(args, "-options=")
+	options.compiler_option_raw = get_option(args, "-compiler_option_raw=")
+	options.runtime_option_raw = get_option(args, "-runtime_option_raw=")
+	options.stdin = get_option(args, "-stdin=")
+	options.save = get_option(args, "-save=")
+	options.open_qf = get_option(args, "-open_qf=")
+
+	return options
 end
 
 return util

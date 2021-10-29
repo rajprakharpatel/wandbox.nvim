@@ -180,6 +180,7 @@ local function run(options)
 	local ok, data = pcall(json.encode, buf_data)
 	-- 	print(options.open_qf)
 	if ok then
+		print(data)
 		compile(data, client, options.open_qf)
 	else
 		notify(
