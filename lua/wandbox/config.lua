@@ -38,9 +38,10 @@ config.options = {
 	},
 	options = {},
 	compiler_option_raw = { cpp = "-fno-color-diagnostics" },
-	stdin = {},
+	stdin = nil,
 	runtime_option_raw = {},
-	save = {},
+	save = nil,
+	open_qf = nil,
 }
 
 config.set = function(options)

@@ -64,6 +64,8 @@ local function setQF()
 			qfData = qfFormat(results_json.program_message, "\n")
 		elseif results_json.program_output ~= nil then
 			qfData = qfFormat(results_json.program_output, "\n")
+		else
+			print("No Output")
 		end
 		vim.fn.setqflist(qfData)
 	elseif results_json.status == "1" then
@@ -85,6 +87,8 @@ local function setQF()
 				"\n",
 				"Program Message:"
 			)
+		else
+			print("No Output")
 		end
 		vim.fn.setqflist(qfData)
 	end
@@ -176,6 +180,7 @@ local function run(options)
 	local ok, data = pcall(json.encode, buf_data)
 	-- 	print(options.open_qf)
 	if ok then
+		print(data)
 		compile(data, client, options.open_qf)
 	else
 		notify(
