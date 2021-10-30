@@ -6,6 +6,7 @@ if exists('g:loaded_wandbox') | finish | endif
 let s:save_cpo = &cpo
 set cpo&vim
 let g:loaded_wandbox = 1
+
 nnoremap <Plug>WandboxRun <cmd>lua require("wandbox").run()<CR>
 
 command! -range=0 -nargs=* -complete=customlist,Complete_wandboxrun WandboxRun lua require('wandbox').run(<q-args>)

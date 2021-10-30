@@ -2,3 +2,4 @@
 **/*.json
 **/*.tmp
 tmp**
+tags
