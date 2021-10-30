@@ -9,6 +9,6 @@ the [Wandbox](https://wandbox.org) api.
 - [X] Provide an ex command interface as WandboxRun
 - [X] accept options as ex command args.
 - [X] completion for WandboxRun ex command args.
-- [ ] Write help docs.
+- [X] Write help docs.
 - [ ] showing output in another window rather than quickfix.
 - [ ] Formatting compilers/programs errors/message to be more readable.
