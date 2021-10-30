@@ -1,0 +1,167 @@
+*Wandbox.nvim.txt* Runs programs on wandbox compilers and return result
+
+Author : Rajprakhar <rajprakhar2000@gmail.com>
+
+  __        __              _ _                            _		~
+  \ \      / /_ _ _ __   __| | |__   _____  __  _ ____   _(_)_ __ ___	~
+   \ \ /\ / / _` | '_ \ / _` | '_ \ / _ \ \/ / | '_ \ \ / / | '_ ` _ \  ~
+    \ V  V / (_| | | | | (_| | |_) | (_) >  < _| | | \ V /| | | | | | | ~
+     \_/\_/ \__,_|_| |_|\__,_|_.__/ \___/_/\_(_)_| |_|\_/ |_|_| |_| |_| ~
+
+*Neovim* plugin to use |Wandbox| compilers			*Wandbox.nvim*
+==============================================================================
+CONTENTS						       *WandboxContents*
+
+    1. Usage ................ |WandboxUsage|
+      1.1 ................... |WandboxQuickstart|
+      1.2 ................... |WandboxCommands|
+    2. Mappings ............. |WandboxMappings|
+    3. License .............. |WandboxLicense|
+    4. Configuration ........ |WandboxConfiguration|
+    5. Bugs ................. |WandboxBugs|
+    6. Credits .............. |WandboxCredits|
+==============================================================================
+USAGE							         *WandboxUsage*
+
+This plugin is a tool for compiling and/or running buffer content of certain
+Programming Languages by listed under |WandboxLanguages| compilers/Interpreters
+provided by Wandbox using its api described here
+https://github.com/melpon/wandbox/blob/master/kennel2/API.rst
+
+------------------------------------------------------------------------------
+QUICKSTART						    *WandboxQuickstart*
+
+On a buffer containing code of supported Language and filetype set correctly
+Run command |:WandboxRun|. This will run the code on Wandbox and fill the
+|Quickfix| window with the output returned.
+
+------------------------------------------------------------------------------
+COMMANDS						      *WandboxCommands*
+
+						*:WandboxRun*
+  :WandboxRun [options]
+			 Run the code on Wandbox and fills the |Quickfix|
+			 window with the output returned. If there is no
+			 output then apropriate message will be printed.
+
+Accepted [options] are described below most of them have have <Tab>
+completion for available values
+
+-compilers=<compiler>	    Set the compiler for this run of WandboxRun
+
+-client_list=<curl-wget>    Set if curl or wget is used to make api request
+
+-options=<compilerSwitches> Set the switches for the compilers.
+
+-compiler_option_raw=<compiler-time-options>
+			    Set any additional compile-time options
+
+-runtime_option_raw=<runtime-options>
+			    Set any additional runtime-options
+
+-stdin=<input>		    Set standard input for program
+
+-open_qf=<true-false>	    Set if Quickfix should automatically open
+
+-save=<true-false>	    Set true or false if you want a permalink
+			    default is false
+Note: currently no method is provided to see the permamentlink
+==============================================================================
+MAPPINGS						      *WandboxMappings*
+
+There are no default keymaps set by the plugin.
+Only a single plug mapping is provided for remmaping
+|<Plug>WandboxRun|					     *<Plug>WandboxRun*
+
+Does exactly what |:WandboxRun| does without any args
+==============================================================================
+LICENSE			                                       *WandboxLicense*
+
+|Wandbox.nvim| is distributed under MIT license.
+
+Copyright (c) 2021 Rajprakhar
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+==============================================================================
+CONFIGURATION						*WandboxConfiguration*
+
+To configure Wandbox with default options for different filetypes,
+you should call the setup function with argument of a dictionary having custom
+options.
+These options are used by both |:WandboxRun| and |<Plug>WandboxRun|
+any additional options passed to |:WandboxRun| are combined with default with
+preference to the |:WandboxRun| options
+
+Example:
+>
+  require("wandbox").setup({
+	  client_list = { "curl" },
+	  open_qf = true,
+	  compilers = {
+		  cpp = "gcc-head",
+	  },
+	  options = {
+		  cpp = "warnings,optimizations",
+	  },
+  })
+<
+configuration can also be passed for a single run by passing the same
+dictionary to the lua run() function
+Example:
+>
+  require("wandbox").run({
+	  client_list = { "wget" },
+	  open_qf = true,
+	  compilers = {
+		  cpp = "clang-head",
+	  },
+	  options = {
+		  cpp = "verbose",
+	  },
+  })
+<
+This can be mapped to a key to run this particular config only on this keymap
+Example:
+>
+  vim.api.nvim_set_keymap(
+	"n",
+	"<leader>wr",
+	[[<cmd>lua require("wandbox").run({client_list = {'wget'}, open_qf = true})<CR>]],
+	{ noremap = true }
+  )
+<
+This will set <leader>wr to always run Wandbox on current buffer using wget to
+make request and open |Quickfix| after completion
+
+==============================================================================
+BUGS								  *WandboxBugs*
+
+This plugin is still a WIP so bugs are expected you can file an issue on
+github here https://github.com/rajprakharpatel/wandbox.nvim/issues
+==============================================================================
+CREDITS							       *WandboxCredits*
+
+I wrote this plugin just to learn writing plugins for |nvim| with lua
+The idea for the plugin was taken from *Wanbox-vim* which can be found here
+https://github.com/rhysd/wandbox-vim which is also listed on the Wandbox site
+itself here https://wandbox.org in the plugins section
+==============================================================================
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
