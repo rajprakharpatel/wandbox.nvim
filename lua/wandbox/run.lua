@@ -5,6 +5,7 @@ local loop = vim.loop
 local notify = util.notify
 
 local results = {}
+
 -- callback function of stdout and stderr file decriptors
 local function onread(err, data)
 	if err then
@@ -104,7 +105,6 @@ local function compile(data, client, open_qf)
 	local stderr = loop.new_pipe(false)
 
 	if client == "curl" then
-		-- print("using curl")
 		Handle = loop.spawn(
 			"curl",
 			{
@@ -131,7 +131,6 @@ local function compile(data, client, open_qf)
 			end)
 		)
 	elseif client == "wget" then
-		-- print("using wget")
 		Handle = loop.spawn(
 			"wget",
 			{
@@ -167,7 +166,6 @@ end
 -- main runner
 local function run(options)
 	local client = options.client_list[1]
-	-- notify("using " .. client, vim.log.levels.TRACE, {title = 'wandbox.nvim'})
 	local buf_data = util.format_data(options)
 	if buf_data.compiler == nil then
 		notify(
@@ -178,9 +176,7 @@ local function run(options)
 		return
 	end
 	local ok, data = pcall(json.encode, buf_data)
-	-- 	print(options.open_qf)
 	if ok then
-		print(data)
 		compile(data, client, options.open_qf)
 	else
 		notify(

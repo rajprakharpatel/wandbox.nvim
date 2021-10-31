@@ -1,10 +1,12 @@
 -- this module exposes the interface of lua functions:
 local config = require("wandbox.config")
 
+-- setup function to set default options
 local function setup(...)
 	config.set(...)
 end
 
+-- main run function to be called by user
 local function run(options)
 	-- 	require('wandbox.run').run(config.options)
 	if options ~= nil then
